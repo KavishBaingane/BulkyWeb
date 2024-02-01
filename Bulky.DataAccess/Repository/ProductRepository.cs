@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BulkyBook.DataAccess.Repository
 {
-    public  class ProductRepository : Repository<Product>, IProductRepository
+    public class ProductRepository : Repository<Product>, IProductRepository
     {
         private readonly ApplicationDbContext _db;
 
@@ -19,6 +19,23 @@ namespace BulkyBook.DataAccess.Repository
 
         public void Update(Product obj)
         {
+            var objFromDb = _db.Products.FirstOrDefault(p => p.Id == obj.Id);
+            if (objFromDb != null)
+            {
+                objFromDb.Title = obj.Title;
+                objFromDb.ISBN = obj.ISBN;
+                objFromDb.Price = obj.Price;
+                objFromDb.Price50 = obj.Price50;
+                objFromDb.Price100 = obj.Price100;
+                objFromDb.Author = obj.Author;
+                objFromDb.Price100 = obj.Price100;
+                objFromDb.CategoryId = obj.CategoryId;
+                objFromDb.Description = obj.Description;
+                if (obj.ImageUrl != null)
+                {
+                    objFromDb.ImageUrl = obj.ImageUrl;
+                }
+            }
             _db.Update(obj);
         }
     }
