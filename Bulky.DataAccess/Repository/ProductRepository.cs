@@ -36,7 +36,7 @@ namespace BulkyBook.DataAccess.Repository
                     objFromDb.ImageUrl = obj.ImageUrl;
                 }
             }
-            _db.Update(obj);
+            _db.SaveChanges();
         }
     }
 }
