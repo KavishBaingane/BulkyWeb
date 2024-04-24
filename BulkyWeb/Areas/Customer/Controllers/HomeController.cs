@@ -1,7 +1,9 @@
 using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace BulkyBookWeb.Areas.Customer.Controllers
 {
@@ -25,8 +27,25 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
         public IActionResult Details(int Id)
         {
-            Product Product = _unitOfWork.Product.Get(x=>x.Id==Id, includeProperties:"Category");
-            return View(Product);
+            ShoppingCart shoppingCart = new()
+            {
+                Product = _unitOfWork.Product.Get(x => x.Id == Id, includeProperties: "Category"),
+                Count = 1,
+                ProductId = Id
+            };
+            return View(shoppingCart);
+        }
+        [HttpPost]
+        [Authorize] //when user is logged in then only we allow the user otherwise not
+        public IActionResult Details(ShoppingCart shoppingCart)
+        {
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+            shoppingCart.ApplicationUserId = userId;
+
+            _unitOfWork.ShoppingCart.Add(shoppingCart);
+            _unitOfWork.Save();
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Privacy()

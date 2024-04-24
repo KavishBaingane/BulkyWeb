@@ -11,6 +11,7 @@ namespace BulkyBook.Models
 {
     public class ShoppingCart
     {
+       
         public int? Id { get; set; }
         public int ProductId {  get; set; }
         [ValidateNever]
