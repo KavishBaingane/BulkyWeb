@@ -24,11 +24,11 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
             ShoppingCartViewModel model = new ShoppingCartViewModel();
             model.ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == userId, includeproperties: "Product");
-
+            model.OrderHeader = new OrderHeader();
             foreach (var cart in model.ShoppingCartList)
             {
                 cart.Price = GetPriceBasedOnQuantity(cart);
-                model.OrderTotal += cart.Price * cart.Count;
+                model.OrderHeader.OrderTotal += cart.Price * cart.Count;
             }
             return View(model);
         }
@@ -70,7 +70,25 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
         public IActionResult Summary()
         {
-            return View();
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            ShoppingCartViewModel model = new ShoppingCartViewModel();
+            model.OrderHeader = new OrderHeader();
+            model.ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == userId, includeproperties: "Product");
+            model.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUser.Get(u => u.Id == userId);
+            model.OrderHeader.Name = model.OrderHeader.ApplicationUser.Name;
+            model.OrderHeader.PhoneNumber = model.OrderHeader.ApplicationUser.PhoneNumber;
+            model.OrderHeader.StreetAddress = model.OrderHeader.ApplicationUser.StreetAddress;
+            model.OrderHeader.City = model.OrderHeader.ApplicationUser.City;
+            model.OrderHeader.State = model.OrderHeader.ApplicationUser.State;
+            model.OrderHeader.PoastalCode = model.OrderHeader.ApplicationUser.PostalCode;
+            foreach (var cart in model.ShoppingCartList)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                model.OrderHeader.OrderTotal += cart.Price * cart.Count;
+            }
+            return View(model);
         }
 
         private double GetPriceBasedOnQuantity(ShoppingCart shoppingCart)
@@ -93,5 +111,6 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 }
             }
         }
+       
     }
 }
