@@ -1,6 +1,7 @@
 ﻿using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
+using BulkyBook.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -12,7 +13,8 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
     public class CartController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
-
+        [BindProperty]
+        public ShoppingCartViewModel ShoppingCartViewModel { get; set; }
         public CartController(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
@@ -52,7 +54,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             }
             else
             {
-                //decreemenitng the value it to the table/update 
+                //decreementing the value it to the table/update 
                 cartFromDb.Count -= 1;
                 _unitOfWork.ShoppingCart.Update(cartFromDb);
             }
@@ -89,6 +91,66 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 model.OrderHeader.OrderTotal += cart.Price * cart.Count;
             }
             return View(model);
+        }
+
+        [HttpPost]
+        [ActionName("Summary")]
+        public IActionResult SummaryPOST(ShoppingCartViewModel model)
+        {
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            //ShoppingCartViewModel model = new ShoppingCartViewModel();
+            //model.OrderHeader = new OrderHeader();
+            model.ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == userId, includeproperties: "Product");
+            model.OrderHeader.OrderDate = DateTime.Now;
+            model.OrderHeader.ApplicationUserId = userId;
+            ApplicationUser applicationUser = _unitOfWork.ApplicationUser.Get(u => u.Id == userId);
+            foreach (var cart in model.ShoppingCartList)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                model.OrderHeader.OrderTotal += cart.Price * cart.Count;
+            }
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
+            {
+                //it is the regular customer account and we need to capture Payment
+                model.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
+                model.OrderHeader.OrderStatus = SD.StatusPending;
+            }
+            else
+            {
+                //it is a company account
+                model.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
+                model.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
+            }
+            _unitOfWork.OrderHeader.Add(model.OrderHeader);
+            _unitOfWork.Save();
+
+            foreach(var item in model.ShoppingCartList)
+            {
+                OrderDetail orderDetail = new()
+                {
+                    ProductId = item.ProductId,
+                    OrderHeaderId = model.OrderHeader.Id,
+                    Price = item.Price,
+                    Count = item.Count,
+                };
+                _unitOfWork.OrderDetail.Add(orderDetail);
+                _unitOfWork.Save();
+            }
+
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
+            {
+                //it is a regular customer account and we need to capture payment 
+                //stripe logic
+            }
+
+            return RedirectToAction(nameof(OrderConfirmation), new { id = model.OrderHeader.Id });
+        }
+
+        public IActionResult OrderConfirmation(int Id)
+        {
+            return View(Id);
         }
 
         private double GetPriceBasedOnQuantity(ShoppingCart shoppingCart)
