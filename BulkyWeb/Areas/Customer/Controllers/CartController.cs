@@ -4,6 +4,8 @@ using BulkyBook.Models.ViewModels;
 using BulkyBook.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Elfie.Model;
+using Stripe.Checkout;
 using System.Security.Claims;
 
 namespace BulkyBookWeb.Areas.Customer.Controllers
@@ -126,7 +128,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             _unitOfWork.OrderHeader.Add(model.OrderHeader);
             _unitOfWork.Save();
 
-            foreach(var item in model.ShoppingCartList)
+            foreach (var item in model.ShoppingCartList)
             {
                 OrderDetail orderDetail = new()
                 {
@@ -143,6 +145,40 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             {
                 //it is a regular customer account and we need to capture payment 
                 //stripe logic
+                var domain = "https://localhost:44302/";
+                var options = new SessionCreateOptions
+                {
+
+                    SuccessUrl = domain + $"customer/cart/OrderConfirmation?id={model.OrderHeader.Id}",
+                    CancelUrl = domain + $"customer/cart/Index",
+                    Mode = "payment",
+                };
+
+                options.LineItems = new List<SessionLineItemOptions>(); //initialise as a list
+                foreach (var item in model.ShoppingCartList)
+                {
+                    var sessionLineItem = new SessionLineItemOptions
+                    {
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            UnitAmount = (long)(item.Price * 100), //$20.50 => 250
+                            Currency = "usd",
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = item.Product.Title
+                            }
+                        },
+                        Quantity = item.Count
+                    };
+                    options.LineItems.Add(sessionLineItem);
+                    
+                }
+                var service = new SessionService();
+                Session session =  service.Create(options); //response of session 
+                _unitOfWork.OrderHeader.UpdateStripePaymentId(model.OrderHeader.Id,session.Id,session.PaymentIntentId);
+                _unitOfWork.Save();
+                Response.Headers.Add("Location", session.Url);
+                return new StatusCodeResult(303);
             }
 
             return RedirectToAction(nameof(OrderConfirmation), new { id = model.OrderHeader.Id });
@@ -173,6 +209,6 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 }
             }
         }
-       
+
     }
 }
