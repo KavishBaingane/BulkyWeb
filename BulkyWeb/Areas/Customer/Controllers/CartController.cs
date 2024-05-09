@@ -49,10 +49,11 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
         public IActionResult Minus(int cartId)
         {
-            var cartFromDb = _unitOfWork.ShoppingCart.Get(x => x.Id == cartId);
+            var cartFromDb = _unitOfWork.ShoppingCart.Get(x => x.Id == cartId, tracked: true);
             if (cartFromDb.Count <= 1)
             {
                 //in this we are removing it from the dataBase table as it is going zero
+                HttpContext.Session.SetInt32(SD.SessionCart, _unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == cartFromDb.ApplicationUserId).Count() - 1);
                 _unitOfWork.ShoppingCart.Remove(cartFromDb);
             }
             else
@@ -67,7 +68,8 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
         public IActionResult Remove(int cartId)
         {
-            var cartFromDb = _unitOfWork.ShoppingCart.Get(x => x.Id == cartId);
+            var cartFromDb = _unitOfWork.ShoppingCart.Get(x => x.Id == cartId, tracked:true);
+            HttpContext.Session.SetInt32(SD.SessionCart, _unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == cartFromDb.ApplicationUserId).Count() - 1);
             _unitOfWork.ShoppingCart.Remove(cartFromDb);
             _unitOfWork.Save();
             return RedirectToAction(nameof(Index));
@@ -172,11 +174,11 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                         Quantity = item.Count
                     };
                     options.LineItems.Add(sessionLineItem);
-                    
+
                 }
                 var service = new SessionService();
-                Session session =  service.Create(options); //response of session 
-                _unitOfWork.OrderHeader.UpdateStripePaymentId(model.OrderHeader.Id,session.Id,session.PaymentIntentId);
+                Session session = service.Create(options); //response of session 
+                _unitOfWork.OrderHeader.UpdateStripePaymentId(model.OrderHeader.Id, session.Id, session.PaymentIntentId);
                 _unitOfWork.Save();
                 Response.Headers.Add("Location", session.Url);
                 return new StatusCodeResult(303);
@@ -189,7 +191,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         {
             //adding logic for make we know that the order is successful or not by retrieving the info via sessionId
             OrderHeader orderHeader = _unitOfWork.OrderHeader.Get(x => x.Id == id, includeProperties: "ApplicationUser");
-            if(orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
+            if (orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
             {
                 //this is an order by a CUstomer
             }
@@ -203,7 +205,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 _unitOfWork.Save();
             }
 
-            List<ShoppingCart> shoppingCarts = _unitOfWork.ShoppingCart.GetAll(x=>x.ApplicationUserId == orderHeader.ApplicationUserId).ToList();
+            List<ShoppingCart> shoppingCarts = _unitOfWork.ShoppingCart.GetAll(x => x.ApplicationUserId == orderHeader.ApplicationUserId).ToList();
 
 
             _unitOfWork.ShoppingCart.RemoveRange(shoppingCarts);

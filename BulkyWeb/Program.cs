@@ -34,6 +34,14 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = $"/Identity/Account/AccessDenied";
 });
 
+//for adding session to the services
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(100);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 builder.Services.AddRazorPages();
 
@@ -57,6 +65,8 @@ app.UseRouting();
 app.UseAuthentication();
 
 app.UseAuthorization();
+//after auhtorzation we need to add session to the request pipeline too
+app.UseSession();
 
 app.MapRazorPages();
 app.MapControllerRoute(
