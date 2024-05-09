@@ -26,7 +26,7 @@ namespace BulkyBookWeb.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPost(string returnUrl = null)
         {
             await _signInManager.SignOutAsync();
-            HttpContext.Session.Clear();
+            //HttpContext.Session.Clear(); no longer required now as we have added vew component
             _logger.LogInformation("User logged out.");
             if (returnUrl != null)
             {
