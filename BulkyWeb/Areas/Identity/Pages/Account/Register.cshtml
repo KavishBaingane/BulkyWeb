@@ -6,13 +6,11 @@
     <div class="card-header bg-secondary bg-gradient ml-0 py-4">
         <div class="row">
             <div class="col-12 text-center">
-                @if (User.IsInRole(SD.Role_Admin))
-                {
+                @if (User.IsInRole(SD.Role_Admin)) {
                     <h2 class="py-2 text-white">Register - ADMIN PORTAL</h2>
                 }
-                else
-                {
-                    <h2 class="py-2 text-white">Register</h2>
+                else{
+                <h2 class="py-2 text-white">Register</h2>
                 }
             </div>
         </div>
@@ -29,12 +27,12 @@
                         <span asp-validation-for="Input.Email" class="text-danger"></span>
                     </div>
                     <div class="form-floating mb-3 col-md-6">
-                        <input asp-for="Input.Name" class="form-control" placeholder="Name" />
+                        <input asp-for="Input.Name" class="form-control" placeholder="name@example.com" />
                         <label asp-for="Input.Name" class="ms-2 text-muted">Full Name</label>
                         <span asp-validation-for="Input.Name" class="text-danger"></span>
                     </div>
                     <div class="form-floating mb-3 col-md-6">
-                        <input asp-for="Input.PhoneNumber" class="form-control" placeholder="PhoneNumber" />
+                        <input asp-for="Input.PhoneNumber" class="form-control" placeholder="name@example.com" />
                         <label asp-for="Input.PhoneNumber" class="ms-2 text-muted">Phone Number</label>
                         <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
                     </div>
@@ -48,9 +46,9 @@
                         <label asp-for="Input.ConfirmPassword" class="ms-2 text-muted">Confirm Password</label>
                         <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
                     </div>
-
+                   
                     <div class="form-floating mb-3 col-md-6">
-                        <input asp-for="Input.StreetAddress" class="form-control" placeholder="name@example.com" />
+                        <input asp-for="Input.StreetAddress" class="form-control"  placeholder="name@example.com" />
                         <label asp-for="Input.StreetAddress" class="ms-2 text-muted">Street Address</label>
                         <span asp-validation-for="Input.StreetAddress" class="text-danger"></span>
                     </div>
@@ -69,8 +67,8 @@
                         <label asp-for="Input.PostalCode" class="ms-2 text-muted">Postal Code</label>
                         <span asp-validation-for="Input.PostalCode" class="text-danger"></span>
                     </div>
-                    @* @if (User.IsInRole(SD.Role_Admin))
-                    { *@
+                    @if (User.IsInRole(SD.Role_Admin))
+                    {
                         <div class="form-floating mb-3 col-md-6">
                             <select asp-for="Input.Role" asp-items="@Model.Input.RoleList" class="form-select">
                                 <option disabled selected>-Select Role-</option>
@@ -81,10 +79,9 @@
                                 <option disabled selected>-Select Company-</option>
                             </select>
                         </div>
-                        
-                   
+                    }
                     <div class="col-12">
-                        <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+                    <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
                     </div>
                 </form>
             </div>
@@ -121,7 +118,7 @@
                             }
                         }
                     </section>
-                </div>
+            </div>
             }
         </div>
     </div>
@@ -133,12 +130,12 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function () {
-            $('#Input_Role').change(function () {
+            $('#Input_Role').change(function(){
                 var selection = $('#Input_Role Option:Selected').text();
-                if (selection == 'Company') {
+                if(selection=='Company'){
                     $('#Input_CompanyId').show();
                 }
-                else {
+                else{
                     $('#Input_CompanyId').hide();
                 }
             })
